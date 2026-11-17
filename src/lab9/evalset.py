@@ -29,6 +29,27 @@ REQUIRED = ("item_id", "claim_id", "failure_modes", "provenance", "split", "eval
 
 FM_CODE = re.compile(r"FM-\d{2}")
 
+# M1: an item carries FM-xx when that bug switch alone (plus no_override) makes this claim's trial
+# diverge from its label at seeds 11 and 12 (probe table in docs/failure_taxonomy.md). FM-01 breaks
+# every claim, so build() adds it to all. Two codes are by claim design, with no switch to probe:
+# FM-09 (C-005) and FM-03 (C-009).
+FAILURE_MODES = {
+    "C-001": ["FM-04", "FM-07"],
+    "C-002": ["FM-03"],
+    "C-003": [],
+    "C-004": [],
+    "C-005": ["FM-09"],
+    "C-006": ["FM-06"],
+    "C-007": ["FM-02", "FM-04"],
+    "C-008": ["FM-04", "FM-05", "FM-08"],
+    "C-009": ["FM-03"],
+    "C-010": ["FM-04", "FM-07"],
+    "C-011": ["FM-04", "FM-07"],
+    "C-012": ["FM-04", "FM-07"],
+    "C-013": ["FM-02", "FM-04", "FM-05"],
+    "C-014": ["FM-04", "FM-05", "FM-08"],
+}
+
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -46,8 +67,7 @@ def build(source: Path = SOURCE) -> tuple[int, int]:
         items.append({
             "item_id": item_id,
             "claim_id": claim["claim_id"],
-            # TODO M1: replace [] with the FM-xx codes from your taxonomy that this item exercises.
-            "failure_modes": [],
+            "failure_modes": ["FM-01", *FAILURE_MODES.get(claim["claim_id"], [])],
             "provenance": {"source": "lab8_public", "matrix_id": claim.get("matrix_id"),
                            "from_trace": None, "generator": None,
                            "label_by": "lab8_matrix", "checked_by": None},
