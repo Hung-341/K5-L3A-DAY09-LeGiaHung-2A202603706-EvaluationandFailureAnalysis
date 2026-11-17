@@ -5,3 +5,6 @@ src/traces/
 *.sqlite
 .venv/
 .env
+.env.*
+!.env.example
+*.sqlite-*
