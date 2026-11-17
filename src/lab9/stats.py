@@ -8,6 +8,7 @@ Reference values to self-check are in tests/test_lab9_stats.py.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from math import comb
 
 POS = "FAIL"   # the judge's job is to FIND failures, so FAIL is the positive class
 
@@ -65,22 +66,30 @@ def paired_bootstrap(a: Sequence[float], b: Sequence[float], *, n_resamples: int
         raise ValueError("a and b must be non-empty and the same length")
     if np.array_equal(x, y):
         return 0.0, 0.0, 0.0      # zero spread: scipy would return a degenerate interval
+    if x.size == 1:
+        d = float(x[0] - y[0])    # one item (a one-item slice): no spread to resample, report the point
+        return d, d, d
     res = bootstrap((x, y), lambda u, v, axis=-1: np.mean(u, axis=axis) - np.mean(v, axis=axis),
                     paired=True, vectorized=True, n_resamples=n_resamples, confidence_level=confidence,
                     method="percentile", rng=np.random.default_rng(rng))
     return float(x.mean() - y.mean()), float(res.confidence_interval.low), float(res.confidence_interval.high)
 
 
+def _check_nck(n: int, c: int, k: int) -> None:
+    if not (0 <= c <= n) or not (1 <= k <= n):
+        raise ValueError(f"need 0 <= c <= n and 1 <= k <= n, got n={n} c={c} k={k}")
+
+
 def pass_at_k(n: int, c: int, k: int) -> float:
     """Probability that AT LEAST ONE of k trials drawn from n (c of them passing) passes.
     Unbiased estimator (Chen et al. 2021): 1 - C(n-c, k) / C(n, k). Raise ValueError if k > n."""
-    # TODO M6
-    raise NotImplementedError
+    _check_nck(n, c, k)
+    return 1 - comb(n - c, k) / comb(n, k)
 
 
 def pass_hat_k(n: int, c: int, k: int) -> float:
     """pass^k (tau-bench, Yao et al. 2024): probability that ALL k trials drawn from n pass.
     Unbiased estimator: C(c, k) / C(n, k). Raise ValueError if k > n.
     pass^k <= pass@1 <= pass@k; a reliable agent keeps pass^k close to pass@1."""
-    # TODO M6
-    raise NotImplementedError
+    _check_nck(n, c, k)
+    return comb(c, k) / comb(n, k)

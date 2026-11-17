@@ -46,3 +46,32 @@ Card này đi kèm mỗi báo cáo và được dùng lại ở Day 10.
   - Trace của `swarm` không có event `reply`, nên `reply_matches_ledger` trên baseline đạt 1.0 do không có reply để kiểm.
   - FM-09 chưa có trace lỗi trong v1; FM-01, FM-06, FM-07, FM-08 chỉ có bằng chứng từ shape dò một công tắc, không có trong variant công khai.
 - **Khi nào tăng eval-set version:** khi thêm, bỏ hoặc sửa item, nhãn hay `failure_modes`, vì các thay đổi này đổi `eval_set_sha` và baseline cũ không còn so sánh được. Thêm pack adversarial tạo v2 với baseline riêng `baseline_v2.json`. Đổi ngưỡng hoặc metric trên cùng eval set thì tăng `metric_spec_version` và chỉ được chặt hơn.
+
+## Eval set v2 (M5–M7)
+
+- **Run ID / eval set SHA:** baseline `E-swarm-20261117-4a3e`, PR `E-slice_regression-20261117-4a3e`; eval set v2 SHA `4a3edb8bb5db`, 28 item × 5 seed (14 item v1 và 14 item adversarial), metric_spec 2.0. Report: `src/reports/baseline_v2.json`, `src/reports/eval_slice_regression.json`.
+- **Ngưỡng chọn từ A/A:** `python -m lab9.mutation --spec config/metric_spec_v2.yaml --aa 66,77,88,99,110` chạy cùng agent `swarm` trên hai bộ seed và cho Δ = 0 ở mọi metric (`pass_rate` 0.9786, `pass_hat_5` 0.8929 ở cả hai bộ). Dải nhiễu trên MockLLM bằng 0, nên sàn đặt ngay dưới giá trị baseline: thêm một trial hỏng so với baseline là thay đổi thật.
+
+  | Metric / slice | Baseline | Sàn | Số trial hoặc item |
+  |---|---|---|---|
+  | `pass_hat_5` | 0.8929 | 0.89 | 25 trên 28 item qua cả 5 seed |
+  | `slice:money_movement/pass_rate` | 1.0 | 0.97 | 60 trial |
+  | `slice:money_movement/refund_amount_correct` | 1.0 | 0.97 | 60 trial |
+  | `slice:adversarial/pass_rate` | 0.9714 | 0.96 | 70 trial |
+  | `slice:denial/pass_rate` | 0.9455 | 0.94 | 55 trial |
+  | `slice:escalation/pass_rate` | 1.0 | 0.96 | 20 trial |
+
+  Với LLM thật, dải nhiễu A/A lớn hơn 0 vì cùng một prompt cho câu trả lời khác nhau giữa các lần chạy. Khi đó sàn phải hạ xuống dưới dải nhiễu đo được, nếu không gate chặn ngẫu nhiên các PR trung thực.
+- **Slice nào bắt lỗi nào:**
+
+  | Variant | `pass_rate` chung | Bị chặn ở | Lỗi |
+  |---|---|---|---|
+  | `slice_regression` | 0.9357, trên sàn 0.85; Δ −0.043, CI [−0.121, +0.029] | `slice:money_movement/pass_rate` (0.85), `slice:money_movement/refund_amount_correct` (0.85), `slice:adversarial/pass_rate` (0.9143) | FM-04 cộng clause ở seed lẻ trên E-014, E-105, E-106 |
+  | `flaky_regression` | 0.9143; Δ −0.064, CI [−0.114, −0.014] | `pass_rate`, `pass_hat_5` (0.5714), 4 slice | FM-04 làm tròn xuống ở 1 trên 5 seed |
+  | `seeded_regression` | 0.6429 | `refund_amount_correct`, `pass_rate`, `pass_hat_5`, `reply_matches_ledger`, 4 slice | FM-02, FM-03, FM-05 |
+  | `fixed`, `honest_refactor` | 1.0 | không bị chặn | — |
+
+  Scorecard `python -m lab9.mutation`: 3/3 regression bị chặn, 0 báo nhầm.
+- **Chống gian lận eval:** `integrity_check` chặn 4 trap công khai (`evaluator_errors_as_nan`, `dropped_failing_rows`, `cherry_picked_seeds`, `loosened_spec`). Ngoài 6 điều kiện của đề, gate còn chặn dòng `(item_id, seed)` trùng lặp, giá trị metric không khớp với các dòng của chính report, và điểm của dòng không phải kiểu bool.
+- **Giới hạn cỡ mẫu:** một bug chỉ xuất hiện ở 1 trên 3 seed không phát hiện ổn định được với 5 seed. Variant thử `no_override + rare + stale_clause` làm hỏng E-006, E-103, E-104 ở seed 33 và đồng thời sửa 3 trial hỏng của baseline ở seed 55; mọi giá trị trung bình, slice và `pass_hat_5` bằng đúng baseline nên gate cho merge. Ngưỡng không được hạ để bắt trường hợp này; cần thêm seed hoặc thêm item.
+- **Giới hạn khác:** gate không phát hiện report bịa toàn bộ điểm của từng dòng một cách nhất quán; trường hợp đó chỉ lộ khi CI tự chạy lại eval. Baseline `swarm` có 3 trial hỏng ở seed 55 (E-002, E-101, E-102, FM-03).
