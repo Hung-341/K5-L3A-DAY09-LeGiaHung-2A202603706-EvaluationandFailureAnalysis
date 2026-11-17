@@ -27,7 +27,7 @@ Lệnh in ra ba phần: các event trong trace (`reply`, `decision`, `model_over
 
 | Trường | Nội dung |
 |---|---|
-| Trial | `seeded_regression C-014@11`, run ID `E-seeded_regression-20261117-ef16` trong `src/reports/eval_seeded_regression.json` (item E-014, seed 11). |
+| Trial | `seeded_regression C-014@11`, run ID `E-seeded_regression-20261117-ccbc` trong `src/reports/eval_seeded_regression.json` (item E-014, seed 11). |
 | Triệu chứng | Grader Lab 8 FAIL với lý do `proposal_mismatch`. Reply nói "đã hoàn 120.000đ cho đơn O-515", ledger ghi 90.000đ, nhãn 120.000đ. |
 | Bước sai đầu tiên | Event 5 `proposal {"amount_vnd": 120000}`. |
 | Vì sao là bước *đầu tiên* | Event 1 `handoff` và event 2 `investigator` giống bản `fixed`. Event 3 `quote` trả 150.000đ, đúng với `proposal_amount` của nhãn. Event 4 `refund_history {"refund_count": 1, "refunded_vnd": 30000}` chỉ đọc dữ liệu và số đọc được là đúng. Event 5 là lúc agent tự trừ 30.000đ khỏi quote. |

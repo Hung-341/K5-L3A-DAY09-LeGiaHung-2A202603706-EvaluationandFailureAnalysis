@@ -1,0 +1,2 @@
+# The eval set is hashed into eval_set_sha: keep LF on every OS.
+src/data/eval/*.jsonl text eol=lf
