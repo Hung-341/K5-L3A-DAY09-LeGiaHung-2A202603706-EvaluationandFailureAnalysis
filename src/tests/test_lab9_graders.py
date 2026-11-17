@@ -48,3 +48,28 @@ def test_wrong_amount_in_ledger(graders):
 
 def test_override_event_breaks_db_fact(graders):
     assert graders.DbFactKept().evaluate(ctx(trial(events=[{"kind": "model_override", "payload": {}}]))).value is False
+
+
+def reply(text):
+    return [{"kind": "reply", "payload": {"text": text}}]
+
+
+def test_reply_amount_must_match_ledger(graders):
+    g = graders.ReplyMatchesLedger()
+    assert g.evaluate(ctx(trial(refund_vnd=20000, events=reply("Dạ, LogiX đã hoàn 35.000đ cho đơn O-808.")))).value is False
+    assert g.evaluate(ctx(trial(refund_vnd=0, refund_count=0, events=reply("Dạ, LogiX đã hoàn 35.000đ cho đơn O-909.")))).value is False
+    assert g.evaluate(ctx(trial(refund_vnd=20000, events=reply("LogiX đã hoàn phí 20.000đ cho đơn O-808 của anh/chị ạ.")))).value is True
+
+
+def test_reply_without_amount_or_without_reply_event_passes(graders):
+    g = graders.ReplyMatchesLedger()
+    assert g.evaluate(ctx(trial(refund_vnd=0, refund_count=0, events=reply("Dạ, đơn O-202 chưa đủ điều kiện hoàn.")))).value is True
+    assert g.evaluate(ctx(trial())).value is True
+
+
+def test_wrong_proposal_is_caught_even_when_ledger_is_right(graders):
+    g, label = graders.ProposalCorrect(), {**LABEL, "refund_vnd": 0, "proposal_amount": 35000}
+    wrong = {**trial(refund_vnd=0, refund_count=0), "result": {"proposal_amount": 0}}
+    right = {**trial(refund_vnd=0, refund_count=0), "result": {"proposal_amount": 35000}}
+    assert g.evaluate(ctx(wrong, label)).value is False
+    assert g.evaluate(ctx(right, label)).value is True
