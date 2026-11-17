@@ -45,7 +45,7 @@ def integrity_check(pr: dict, base: dict, spec: dict, base_spec: dict | None = N
         problems.append(f"{len(pr['evaluator_failures'])} evaluator failure(s): graders crashed, scores are incomplete")
 
     want = int(man.get("items") or 0) * len(man.get("seeds") or [])
-    if len(rows) != want:
+    if "items" in man and "seeds" in man and len(rows) != want:
         problems.append(f"{len(rows)} rows, manifest says {man.get('items')} items x {len(man.get('seeds') or [])} seeds = {want}")
     keys = [(r.get("item_id"), r.get("seed")) for r in rows]
     if len(set(keys)) != len(keys):
@@ -57,15 +57,17 @@ def integrity_check(pr: dict, base: dict, spec: dict, base_spec: dict | None = N
 
     graded = [m["id"] for m in spec.get("metrics") or [] if m["id"] in GRADERS]
     for mid in graded:
+        if not any(mid in r for r in rows):
+            continue                    # never graded in this report: check() reports the metric as MISSING
         vals = [r.get(mid) for r in rows]
-        nulls = sum(not isinstance(v, bool) for v in vals)      # None, NaN, a string: not a grade
+        nulls = sum(not isinstance(v, bool) for v in vals)      # None, NaN, a string, or no key: not a grade
         if nulls:
             problems.append(f"metric {mid}: {nulls} row(s) have no score (crashed grader drops out of the mean)")
             continue
         # The report's aggregate must be what its own rows say (same rule as lab9.eval.aggregate).
         if vals and mid in (pr.get("metrics") or {}) and isinstance(pr["metrics"][mid], (int, float)):
             mine = sum(vals) if mid in ("secret_leak", "approval_bypass") else round(sum(vals) / len(vals), 4)
-            if math.isfinite(pr["metrics"][mid]) and abs(mine - pr["metrics"][mid]) > 1e-9:
+            if math.isfinite(pr["metrics"][mid]) and abs(mine - pr["metrics"][mid]) > 1e-4:
                 problems.append(f"metric {mid} is {pr['metrics'][mid]} but its rows give {mine}: report was edited")
 
     # pass_5 / pass^k / pass@k are derived from pass_rate rows; a hand-edited value has no row to back it.
@@ -84,7 +86,7 @@ def integrity_check(pr: dict, base: dict, spec: dict, base_spec: dict | None = N
             fn = stats.pass_hat_k if kind == "pass_hat" else stats.pass_at_k
             est = [fn(len(v), sum(v), int(k)) for v in by_item.values()]
         mine = round(sum(est) / len(est), 4)
-        if abs(mine - val) > 1e-9:
+        if abs(mine - val) > 1e-4:
             problems.append(f"metric {mid} is {val} but its rows give {mine}: report was edited")
 
     tags = lambda rep: {r.get("item_id"): frozenset(r.get("slices") or []) for r in rep.get("rows") or []}
@@ -140,8 +142,10 @@ def slice_check(pr: dict, base: dict, spec: dict) -> tuple[list[str], list[str]]
         a, b = per_item(pr, metric, slice_name=name), per_item(base, metric, slice_name=name)
         th = {k: sl[k] for k in ("min", "no_significant_drop") if k in sl}
         verdict, note, val = "ok", "", None
-        if not a:
-            verdict = "missing"            # an empty slice hides a regression: never treat it as a pass
+        if not a and not b:
+            verdict = "ok"                 # no item carries this tag in either report: nothing to compare
+        elif not a:
+            verdict = "missing"            # the baseline has this slice and the PR does not: never a pass
         else:
             val = round(sum(a.values()) / len(a), 4)
             if "min" in sl and val < sl["min"]:

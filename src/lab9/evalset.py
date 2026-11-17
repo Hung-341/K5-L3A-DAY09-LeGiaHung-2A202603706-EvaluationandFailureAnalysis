@@ -70,7 +70,8 @@ def build(source: Path = SOURCE) -> tuple[int, int]:
             "failure_modes": ["FM-01", *FAILURE_MODES.get(claim["claim_id"], [])],
             "provenance": {"source": "lab8_public", "matrix_id": claim.get("matrix_id"),
                            "from_trace": None, "generator": None,
-                           "label_by": "lab8_matrix", "checked_by": None},
+                           # M1: the `fixed` shape reproduces every v1 label on all 5 seeds (pass_rate 1.0).
+                           "label_by": "lab8_matrix", "checked_by": "fixed_shape_replay"},
             "split": "regression",
             "eval_set_version": VERSION,
         })

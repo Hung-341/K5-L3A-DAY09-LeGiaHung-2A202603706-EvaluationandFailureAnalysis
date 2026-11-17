@@ -2,9 +2,9 @@
 
 Card này đi kèm mỗi báo cáo và được dùng lại ở Day 10.
 
-- **Run ID / eval set SHA:** baseline `E-swarm-20261117-ccbc`; PR `E-fixed-20261117-ccbc` và `E-seeded_regression-20261117-ccbc`; eval set SHA `ccbc7f0f737a`. Ba report nằm trong `src/reports/` và do `python -m lab9.eval` sinh ra.
-- **Phiên bản:** code và grader là commit chứa card này trên nhánh `starter/d09` · eval set v1 (sha `ccbc7f0f737a`) · metric_spec 1.0 · seeds 11/22/33/44/55 · Python 3.11.9 · LLM MockLLM.
-- **Eval set:** v1, 14 item × 5 seed (70 trial), nguồn lab8_public; nhãn: `labels_v1.json`, tách khỏi item. Mỗi item mang `failure_modes` theo bảng dò trong `docs/failure_taxonomy.md`.
+- **Run ID / eval set SHA:** baseline `E-swarm-20261117-a66d`; PR `E-fixed-20261117-a66d` và `E-seeded_regression-20261117-a66d`; eval set SHA `a66daea20398`. Ba report nằm trong `src/reports/` và do `python -m lab9.eval` sinh ra.
+- **Phiên bản:** code và grader là commit chứa card này trên nhánh `starter/d09` · eval set v1 (sha `a66daea20398`) · metric_spec 1.0 · seeds 11/22/33/44/55 · Python 3.11.9 · LLM MockLLM.
+- **Eval set:** v1, 14 item × 5 seed (70 trial), nguồn lab8_public; nhãn: `labels_v1.json`, tách khỏi item. Mỗi item mang `failure_modes` theo bảng dò trong `docs/failure_taxonomy.md` và provenance `label_by: lab8_matrix`, `checked_by: fixed_shape_replay` (shape `fixed` tái lập đúng 14 nhãn trên cả 5 seed).
 - **Metric & ngưỡng:** trích `src/config/metric_spec.yaml`.
 
   | Metric | Loại | Ngưỡng | Chặn merge |
@@ -49,7 +49,7 @@ Card này đi kèm mỗi báo cáo và được dùng lại ở Day 10.
 
 ## Eval set v2 (M5–M7)
 
-- **Run ID / eval set SHA:** baseline `E-swarm-20261117-4a3e`, PR `E-slice_regression-20261117-4a3e`; eval set v2 SHA `4a3edb8bb5db`, 28 item × 5 seed (14 item v1 và 14 item adversarial), metric_spec 2.0. Report: `src/reports/baseline_v2.json`, `src/reports/eval_slice_regression.json`.
+- **Run ID / eval set SHA:** baseline `E-swarm-20261117-af35`, PR `E-slice_regression-20261117-af35`; eval set v2 SHA `af356458e3af`, 28 item × 5 seed (14 item v1 và 14 item adversarial), metric_spec 2.0. Report: `src/reports/baseline_v2.json`, `src/reports/eval_slice_regression.json`.
 - **Ngưỡng chọn từ A/A:** `python -m lab9.mutation --spec config/metric_spec_v2.yaml --aa 66,77,88,99,110` chạy cùng agent `swarm` trên hai bộ seed và cho Δ = 0 ở mọi metric (`pass_rate` 0.9786, `pass_hat_5` 0.8929 ở cả hai bộ). Dải nhiễu trên MockLLM bằng 0, nên sàn đặt ngay dưới giá trị baseline: thêm một trial hỏng so với baseline là thay đổi thật.
 
   | Metric / slice | Baseline | Sàn | Số trial hoặc item |
